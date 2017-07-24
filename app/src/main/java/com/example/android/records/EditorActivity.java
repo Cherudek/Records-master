@@ -387,9 +387,10 @@ public class EditorActivity extends AppCompatActivity implements
 
 
         if ((!TextUtils.isEmpty(albumNameString)) && (!TextUtils.isEmpty(bandNameString)) && (!TextUtils.isEmpty(imagePath)) &&
-                        (!TextUtils.isEmpty(quantityString)) && (!TextUtils.isEmpty(priceString)) ||
+                (!TextUtils.isEmpty(quantityString)) && (!TextUtils.isEmpty(priceString)) &&
                         (!TextUtils.isEmpty(supplierNameString)) && (!TextUtils.isEmpty(supplierEmailString))) {
-             finish();
+            // Exit activity only when all the fields have been filled
+            finish();
 
         } else {
             // Check if this is supposed to be a new record
@@ -397,15 +398,13 @@ public class EditorActivity extends AppCompatActivity implements
             if (mCurrentRecordUri == null ||
                     TextUtils.isEmpty(albumNameString) || TextUtils.isEmpty(bandNameString) ||
                     TextUtils.isEmpty(quantityString) || TextUtils.isEmpty(priceString) ||
-                    TextUtils.isEmpty(supplierNameString) ||
-                    TextUtils.isEmpty(supplierEmailString)) {
-                // Since no fields were modified, we can return early without creating a new record.
-                // No need to create ContentValues and no need to do any ContentProvider operations.
+                    TextUtils.isEmpty(supplierNameString) || TextUtils.isEmpty(supplierEmailString)) {
+                // if any of the fields are empty le the user know with a Toast message
                 Toast.makeText(getApplicationContext(), "Please fill in all the missing entry fields", Toast.LENGTH_LONG).show();
             }
         }
+        //make sure the image uri is not null
         if (mImageUri == null) {
-            //Toast.makeText(EditorActivity.this, "You Need an Image Cover", Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -507,8 +506,6 @@ public class EditorActivity extends AppCompatActivity implements
             case R.id.action_save:
                 // Save record to database
                 saveRecord();
-                // Exit activity
-                //finish();
 
                 return true;
             // Respond to a click on the "Delete" menu option
@@ -597,6 +594,15 @@ public class EditorActivity extends AppCompatActivity implements
         if (cursor == null || cursor.getCount() < 1) {
             return;
         }
+
+        ViewTreeObserver viewTreeObserver = mRecordCover.getViewTreeObserver();
+        viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                mRecordCover.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                mRecordCover.setImageBitmap(getBitmapFromUri(mImageUri, mContext, mRecordCover));
+            }
+        });
 
         // Proceed with moving to the first row of the cursor and reading data from it
         // (This should be the only row in the cursor)
